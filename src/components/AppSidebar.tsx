@@ -26,6 +26,7 @@ const navItems = [
 const AppSidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const { user, signOut } = useAuth();
 
   return (
     <aside
@@ -72,14 +73,23 @@ const AppSidebar = () => {
 
       {!collapsed && (
         <div className="p-4 border-t border-sidebar-border">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center">
-              <span className="text-sidebar-accent-foreground text-xs font-medium">AD</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center">
+                <span className="text-sidebar-accent-foreground text-xs font-medium">
+                  {(user?.email || "U").charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-sidebar-accent-foreground truncate max-w-[120px]">
+                  {user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Usuário"}
+                </p>
+                <p className="text-[10px] text-sidebar-foreground truncate max-w-[120px]">{user?.email}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-medium text-sidebar-accent-foreground">Admin</p>
-              <p className="text-xs text-sidebar-foreground">admin@empresa.com</p>
-            </div>
+            <button onClick={signOut} className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground" title="Sair">
+              <LogOut size={14} />
+            </button>
           </div>
         </div>
       )}
