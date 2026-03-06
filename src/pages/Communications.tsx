@@ -66,7 +66,7 @@ const Communications = () => {
             </div>
           ) : (
             <>
-              <h3 className="font-semibold mb-3">{clients.find((c: any) => c.id === selectedClient)?.company}</h3>
+              <h3 className="font-semibold mb-3">{(clients as any[]).find(c => c.id === selectedClient)?.company}</h3>
               <div className="flex-1 overflow-y-auto space-y-3 mb-4 max-h-[400px]">
                 {isLoading ? (
                   <p className="text-muted-foreground text-sm">Carregando...</p>
