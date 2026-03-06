@@ -14,16 +14,548 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      automations: {
+        Row: {
+          config: Json | null
+          created_at: string
+          description: string | null
+          enabled: boolean | null
+          id: string
+          last_triggered_at: string | null
+          name: string
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string
+          description?: string | null
+          enabled?: boolean | null
+          id?: string
+          last_triggered_at?: string | null
+          name: string
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string
+          description?: string | null
+          enabled?: boolean | null
+          id?: string
+          last_triggered_at?: string | null
+          name?: string
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      clients: {
+        Row: {
+          address: string | null
+          company: string
+          contact_name: string
+          cpf_cnpj: string | null
+          created_at: string
+          email: string | null
+          entry_date: string | null
+          id: string
+          notes: string | null
+          phone: string | null
+          segment: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          whatsapp: string | null
+        }
+        Insert: {
+          address?: string | null
+          company: string
+          contact_name: string
+          cpf_cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          entry_date?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          segment?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          whatsapp?: string | null
+        }
+        Update: {
+          address?: string | null
+          company?: string
+          contact_name?: string
+          cpf_cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          entry_date?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          segment?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      communications: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          message: string
+          message_type: string | null
+          read: boolean | null
+          sender_id: string
+          task_id: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          message: string
+          message_type?: string | null
+          read?: boolean | null
+          sender_id: string
+          task_id?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          message_type?: string | null
+          read?: boolean | null
+          sender_id?: string
+          task_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communications_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communications_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contracts: {
+        Row: {
+          client_id: string
+          created_at: string
+          description: string | null
+          file_url: string | null
+          id: string
+          monthly_value: number | null
+          periodicity: string | null
+          renewal_date: string | null
+          service_type: string
+          start_date: string
+          status: string
+          total_value: number | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          monthly_value?: number | null
+          periodicity?: string | null
+          renewal_date?: string | null
+          service_type: string
+          start_date: string
+          status?: string
+          total_value?: number | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          monthly_value?: number | null
+          periodicity?: string | null
+          renewal_date?: string | null
+          service_type?: string
+          start_date?: string
+          status?: string
+          total_value?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deliveries: {
+        Row: {
+          client_id: string
+          created_at: string
+          delivered_date: string | null
+          delivery_type: string
+          description: string | null
+          expected_date: string | null
+          feedback: string | null
+          file_url: string | null
+          id: string
+          responsible_id: string | null
+          responsible_name: string | null
+          status: string
+          task_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          delivered_date?: string | null
+          delivery_type: string
+          description?: string | null
+          expected_date?: string | null
+          feedback?: string | null
+          file_url?: string | null
+          id?: string
+          responsible_id?: string | null
+          responsible_name?: string | null
+          status?: string
+          task_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          delivered_date?: string | null
+          delivery_type?: string
+          description?: string | null
+          expected_date?: string | null
+          feedback?: string | null
+          file_url?: string | null
+          id?: string
+          responsible_id?: string | null
+          responsible_name?: string | null
+          status?: string
+          task_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deliveries_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deliveries_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          description: string | null
+          doc_type: string
+          file_name: string | null
+          file_url: string | null
+          id: string
+          project_name: string | null
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          description?: string | null
+          doc_type: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          project_name?: string | null
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          description?: string | null
+          doc_type?: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          project_name?: string | null
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          amount: number
+          client_id: string
+          contract_id: string | null
+          created_at: string
+          due_date: string
+          id: string
+          paid_at: string | null
+          payment_link: string | null
+          payment_method: string | null
+          recurring: boolean | null
+          sent_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          client_id: string
+          contract_id?: string | null
+          created_at?: string
+          due_date: string
+          id?: string
+          paid_at?: string | null
+          payment_link?: string | null
+          payment_method?: string | null
+          recurring?: boolean | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string
+          contract_id?: string | null
+          created_at?: string
+          due_date?: string
+          id?: string
+          paid_at?: string | null
+          payment_link?: string | null
+          payment_method?: string | null
+          recurring?: boolean | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          assignee_id: string | null
+          assignee_name: string | null
+          client_id: string
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          assignee_name?: string | null
+          client_id: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          assignee_name?: string | null
+          client_id?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          amount: number
+          category: string | null
+          client_id: string | null
+          created_at: string
+          description: string
+          due_date: string
+          id: string
+          payment_date: string | null
+          payment_method: string | null
+          status: string
+          supplier: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          client_id?: string | null
+          created_at?: string
+          description: string
+          due_date: string
+          id?: string
+          payment_date?: string | null
+          payment_method?: string | null
+          status?: string
+          supplier?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          client_id?: string | null
+          created_at?: string
+          description?: string
+          due_date?: string
+          id?: string
+          payment_date?: string | null
+          payment_method?: string | null
+          status?: string
+          supplier?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "gestor" | "colaborador"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +682,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "gestor", "colaborador"],
+    },
   },
 } as const
