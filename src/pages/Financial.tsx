@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { Plus, DollarSign, TrendingUp, Clock, CheckCircle, Edit, Trash2 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Plus, DollarSign, TrendingUp, Clock, CheckCircle, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSupabaseQuery, useSupabaseInsert, useSupabaseUpdate, useSupabaseDelete } from "@/hooks/useSupabaseQuery";
+import { useAuth } from "@/contexts/AuthContext";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 
 const statusStyle: Record<string, { label: string; className: string }> = {
   pago: { label: "Pago", className: "bg-success/10 text-success border-success/20" },
@@ -23,6 +23,7 @@ const emptyForm = {
 };
 
 const Financial = () => {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -37,8 +38,19 @@ const Financial = () => {
   const deleteTx = useSupabaseDelete("transactions");
 
   const handleSave = () => {
-    if (!form.description || !form.due_date) return;
-    const values = { ...form, amount: Number(form.amount), client_id: form.client_id || null };
+    if (!form.description.trim() || !form.due_date) return;
+    const amt = Number(form.amount);
+    if (amt <= 0) return;
+    const values = {
+      ...form,
+      description: form.description.trim(),
+      amount: amt,
+      client_id: form.client_id || null,
+      category: form.category.trim() || null,
+      payment_method: form.payment_method.trim() || null,
+      supplier: form.supplier.trim() || null,
+      user_id: user!.id,
+    };
     if (editingId) {
       updateTx.mutate({ id: editingId, values }, { onSuccess: () => { setOpen(false); resetForm(); } });
     } else {
@@ -88,11 +100,11 @@ const Financial = () => {
                   </Select>
                 </div>
               </div>
-              <div className="space-y-2"><Label>Descrição *</Label><Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Descrição *</Label><Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} maxLength={300} /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2"><Label>Valor *</Label><Input type="number" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: Number(e.target.value) }))} /></div>
+                <div className="space-y-2"><Label>Valor *</Label><Input type="number" min={0.01} step={0.01} value={form.amount} onChange={e => setForm(f => ({ ...f, amount: Number(e.target.value) }))} /></div>
                 <div className="space-y-2"><Label>Vencimento *</Label><Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} /></div>
-                <div className="space-y-2"><Label>Método</Label><Input value={form.payment_method} onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))} placeholder="Pix, Boleto..." /></div>
+                <div className="space-y-2"><Label>Método</Label><Input value={form.payment_method} onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))} placeholder="Pix, Boleto..." maxLength={50} /></div>
                 <div className="space-y-2">
                   <Label>Status</Label>
                   <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
@@ -108,8 +120,8 @@ const Financial = () => {
               </div>
               {form.type === "despesa" && (
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2"><Label>Categoria</Label><Input value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} /></div>
-                  <div className="space-y-2"><Label>Fornecedor</Label><Input value={form.supplier} onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))} /></div>
+                  <div className="space-y-2"><Label>Categoria</Label><Input value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} maxLength={100} /></div>
+                  <div className="space-y-2"><Label>Fornecedor</Label><Input value={form.supplier} onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))} maxLength={200} /></div>
                 </div>
               )}
             </div>
@@ -123,10 +135,10 @@ const Financial = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { label: "Faturamento", value: `R$ ${totalRevenue.toLocaleString("pt-BR")}`, icon: DollarSign, gradient: "gradient-primary" },
-          { label: "Lucro Estimado", value: `R$ ${(totalRevenue - expenses).toLocaleString("pt-BR")}`, icon: TrendingUp, gradient: "gradient-success" },
-          { label: "A Receber", value: `R$ ${pending.toLocaleString("pt-BR")}`, icon: Clock, gradient: "gradient-warning" },
-          { label: "Pagas", value: `R$ ${paid.toLocaleString("pt-BR")}`, icon: CheckCircle, gradient: "gradient-primary" },
+          { label: "Faturamento", value: `R$ ${totalRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, icon: DollarSign, gradient: "gradient-primary" },
+          { label: "Lucro Estimado", value: `R$ ${(totalRevenue - expenses).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, icon: TrendingUp, gradient: "gradient-success" },
+          { label: "A Receber", value: `R$ ${pending.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, icon: Clock, gradient: "gradient-warning" },
+          { label: "Pagas", value: `R$ ${paid.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, icon: CheckCircle, gradient: "gradient-primary" },
         ].map((s) => (
           <div key={s.label} className="stat-card"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground uppercase">{s.label}</p><p className="text-xl font-bold mt-1">{s.value}</p></div><div className={`w-10 h-10 rounded-lg flex items-center justify-center ${s.gradient}`}><s.icon size={20} className="text-primary-foreground" /></div></div></div>
         ))}
@@ -157,13 +169,13 @@ const Financial = () => {
                   <td className="p-3"><Badge variant="outline" className={t.type === "receita" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}>{t.type === "receita" ? "Receita" : "Despesa"}</Badge></td>
                   <td className="p-3 text-sm font-medium">{t.description}</td>
                   <td className="p-3 text-sm text-muted-foreground">{t.clients?.company || "—"}</td>
-                  <td className="p-3 text-sm font-semibold">R$ {t.amount.toLocaleString("pt-BR")}</td>
+                  <td className="p-3 text-sm font-semibold">R$ {t.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
                   <td className="p-3 text-sm text-muted-foreground">{t.due_date}</td>
                   <td className="p-3"><Badge variant="outline" className={statusStyle[t.status]?.className}>{statusStyle[t.status]?.label}</Badge></td>
                   <td className="p-3">
                     <div className="flex gap-1">
                       <button onClick={() => handleEdit(t)} className="p-1.5 rounded hover:bg-secondary"><Edit size={14} className="text-muted-foreground" /></button>
-                      <button onClick={() => deleteTx.mutate(t.id)} className="p-1.5 rounded hover:bg-destructive/10"><Trash2 size={14} className="text-destructive" /></button>
+                      <DeleteConfirmDialog onConfirm={() => deleteTx.mutate(t.id)} />
                     </div>
                   </td>
                 </tr>

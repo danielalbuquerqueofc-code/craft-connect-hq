@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Package, Edit, Trash2, CheckCircle } from "lucide-react";
+import { Plus, Edit, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSupabaseQuery, useSupabaseInsert, useSupabaseUpdate, useSupabaseDelete } from "@/hooks/useSupabaseQuery";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 
 const statusStyle: Record<string, { label: string; className: string }> = {
   pendente: { label: "Pendente", className: "bg-warning/10 text-warning border-warning/20" },
@@ -37,8 +38,15 @@ const Deliveries = () => {
   const deleteDelivery = useSupabaseDelete("deliveries");
 
   const handleSave = () => {
-    if (!form.client_id || !form.delivery_type) return;
-    const values = { ...form, task_id: form.task_id || null };
+    if (!form.client_id || !form.delivery_type.trim()) return;
+    const values = {
+      ...form,
+      delivery_type: form.delivery_type.trim(),
+      description: form.description.trim() || null,
+      task_id: form.task_id || null,
+      expected_date: form.expected_date || null,
+      responsible_name: form.responsible_name.trim() || null,
+    };
     if (editingId) {
       updateDelivery.mutate({ id: editingId, values }, { onSuccess: () => { setOpen(false); resetForm(); } });
     } else {
@@ -83,11 +91,11 @@ const Deliveries = () => {
                   </Select>
                 </div>
               </div>
-              <div className="space-y-2"><Label>Tipo de Entrega *</Label><Input value={form.delivery_type} onChange={e => setForm(f => ({ ...f, delivery_type: e.target.value }))} placeholder="Ex: Site, Relatório, Design" /></div>
-              <div className="space-y-2"><Label>Descrição</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Tipo de Entrega *</Label><Input value={form.delivery_type} onChange={e => setForm(f => ({ ...f, delivery_type: e.target.value }))} placeholder="Ex: Site, Relatório, Design" maxLength={200} /></div>
+              <div className="space-y-2"><Label>Descrição</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} maxLength={1000} /></div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2"><Label>Data Prevista</Label><Input type="date" value={form.expected_date} onChange={e => setForm(f => ({ ...f, expected_date: e.target.value }))} /></div>
-                <div className="space-y-2"><Label>Responsável</Label><Input value={form.responsible_name} onChange={e => setForm(f => ({ ...f, responsible_name: e.target.value }))} /></div>
+                <div className="space-y-2"><Label>Responsável</Label><Input value={form.responsible_name} onChange={e => setForm(f => ({ ...f, responsible_name: e.target.value }))} maxLength={100} /></div>
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-4">
@@ -127,7 +135,7 @@ const Deliveries = () => {
                     <div className="flex gap-1">
                       {d.status === "pendente" && <button onClick={() => markDelivered(d.id)} className="p-1.5 rounded hover:bg-success/10" title="Marcar entregue"><CheckCircle size={14} className="text-success" /></button>}
                       <button onClick={() => handleEdit(d)} className="p-1.5 rounded hover:bg-secondary"><Edit size={14} className="text-muted-foreground" /></button>
-                      <button onClick={() => deleteDelivery.mutate(d.id)} className="p-1.5 rounded hover:bg-destructive/10"><Trash2 size={14} className="text-destructive" /></button>
+                      <DeleteConfirmDialog onConfirm={() => deleteDelivery.mutate(d.id)} />
                     </div>
                   </td>
                 </tr>

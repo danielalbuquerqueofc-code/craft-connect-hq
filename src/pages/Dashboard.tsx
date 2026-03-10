@@ -2,28 +2,22 @@ import { Users, FileText, ListChecks, AlertTriangle, DollarSign, Clock, CheckCir
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useSupabaseQuery } from "@/hooks/useSupabaseQuery";
 
-const StatCard = ({ label, value, icon: Icon, gradient }: { label: string; value: string | number; icon: React.ElementType; gradient: string }) => (
-  <div className="stat-card animate-fade-in">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</p>
-        <p className="text-2xl font-bold mt-1">{value}</p>
-      </div>
-      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${gradient}`}>
-        <Icon size={20} className="text-primary-foreground" />
-      </div>
-    </div>
-  </div>
-);
-
 const COLORS = ["hsl(234, 89%, 64%)", "hsl(262, 83%, 58%)", "hsl(199, 89%, 48%)", "hsl(142, 76%, 36%)", "hsl(38, 92%, 50%)"];
 
 const Dashboard = () => {
   const { data: clients = [] } = useSupabaseQuery("clients");
-  const { data: contracts = [] } = useSupabaseQuery("contracts");
-  const { data: tasks = [] } = useSupabaseQuery("tasks");
-  const { data: transactions = [] } = useSupabaseQuery("transactions");
-  const { data: deliveries = [] } = useSupabaseQuery("deliveries");
+  const { data: contracts = [] } = useSupabaseQuery("contracts", {
+    select: "*, clients(company)",
+  });
+  const { data: tasks = [] } = useSupabaseQuery("tasks", {
+    select: "*, clients(company)",
+  });
+  const { data: transactions = [] } = useSupabaseQuery("transactions", {
+    select: "*, clients(company)",
+  });
+  const { data: deliveries = [] } = useSupabaseQuery("deliveries", {
+    select: "*, clients(company)",
+  });
 
   const totalClients = clients.length;
   const activeContracts = (contracts as any[]).filter(c => c.status === "ativo").length;
@@ -38,11 +32,18 @@ const Dashboard = () => {
   const monthlyRevenue = revenues.reduce((s, t) => s + t.amount, 0);
   const receivables = revenues.filter(t => t.status === "pendente").reduce((s, t) => s + t.amount, 0);
   const paidInvoices = revenues.filter(t => t.status === "pago").reduce((s, t) => s + t.amount, 0);
-  const weeklyDeliveries = deliveries.length;
 
-  const todayTasks = (tasks as any[]).filter(t => t.status === "em_andamento" || t.status === "a_fazer").slice(0, 4);
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const weeklyDeliveries = (deliveries as any[]).filter(d => {
+    const created = new Date(d.created_at);
+    return created >= weekAgo;
+  }).length;
 
-  // Revenue by client
+  const todayTasks = (tasks as any[])
+    .filter(t => t.status === "em_andamento" || t.status === "a_fazer")
+    .slice(0, 4);
+
   const revenueByClient = Object.values(
     revenues.reduce((acc: Record<string, { name: string; value: number }>, t: any) => {
       const clientName = t.clients?.company || t.description || "Outros";
@@ -62,17 +63,45 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <StatCard label="Clientes" value={totalClients} icon={Users} gradient="gradient-primary" />
-        <StatCard label="Contratos Ativos" value={activeContracts} icon={FileText} gradient="gradient-primary" />
-        <StatCard label="Tarefas em Andamento" value={tasksInProgress} icon={ListChecks} gradient="gradient-success" />
-        <StatCard label="Tarefas Atrasadas" value={overdueTasks} icon={AlertTriangle} gradient="gradient-danger" />
-        <StatCard label="Renovação Próxima" value={renewingSoon} icon={Clock} gradient="gradient-warning" />
+        {[
+          { label: "Clientes", value: totalClients, icon: Users, gradient: "gradient-primary" },
+          { label: "Contratos Ativos", value: activeContracts, icon: FileText, gradient: "gradient-primary" },
+          { label: "Tarefas em Andamento", value: tasksInProgress, icon: ListChecks, gradient: "gradient-success" },
+          { label: "Tarefas Atrasadas", value: overdueTasks, icon: AlertTriangle, gradient: "gradient-danger" },
+          { label: "Renovação Próxima", value: renewingSoon, icon: Clock, gradient: "gradient-warning" },
+        ].map(({ label, value, icon: Icon, gradient }) => (
+          <div key={label} className="stat-card animate-fade-in">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</p>
+                <p className="text-2xl font-bold mt-1">{value}</p>
+              </div>
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${gradient}`}>
+                <Icon size={20} className="text-primary-foreground" />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard label="Faturamento" value={`R$ ${monthlyRevenue.toLocaleString("pt-BR")}`} icon={DollarSign} gradient="gradient-success" />
-        <StatCard label="Contas a Receber" value={`R$ ${receivables.toLocaleString("pt-BR")}`} icon={Clock} gradient="gradient-warning" />
-        <StatCard label="Contas Pagas" value={`R$ ${paidInvoices.toLocaleString("pt-BR")}`} icon={CheckCircle} gradient="gradient-primary" />
+        {[
+          { label: "Faturamento", value: `R$ ${monthlyRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, icon: DollarSign, gradient: "gradient-success" },
+          { label: "Contas a Receber", value: `R$ ${receivables.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, icon: Clock, gradient: "gradient-warning" },
+          { label: "Contas Pagas", value: `R$ ${paidInvoices.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, icon: CheckCircle, gradient: "gradient-primary" },
+        ].map(({ label, value, icon: Icon, gradient }) => (
+          <div key={label} className="stat-card animate-fade-in">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</p>
+                <p className="text-2xl font-bold mt-1">{value}</p>
+              </div>
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${gradient}`}>
+                <Icon size={20} className="text-primary-foreground" />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -96,23 +125,21 @@ const Dashboard = () => {
         <div className="stat-card">
           <h3 className="font-semibold mb-4">Distribuição de Clientes</h3>
           {clients.length > 0 ? (
-            <>
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie
-                    data={[
-                      { name: "Ativos", value: (clients as any[]).filter(c => c.status === "ativo").length },
-                      { name: "Leads", value: (clients as any[]).filter(c => c.status === "lead").length },
-                      { name: "Pausados", value: (clients as any[]).filter(c => c.status === "pausado").length },
-                    ].filter(d => d.value > 0)}
-                    cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={3}
-                  >
-                    {[0, 1, 2].map(i => <Cell key={i} fill={COLORS[i]} />)}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </>
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: "Ativos", value: (clients as any[]).filter(c => c.status === "ativo").length },
+                    { name: "Leads", value: (clients as any[]).filter(c => c.status === "lead").length },
+                    { name: "Pausados", value: (clients as any[]).filter(c => c.status === "pausado").length },
+                  ].filter(d => d.value > 0)}
+                  cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={3}
+                >
+                  {[0, 1, 2].map(i => <Cell key={i} fill={COLORS[i]} />)}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
           ) : (
             <p className="text-muted-foreground text-sm text-center py-12">Sem dados</p>
           )}
@@ -133,7 +160,7 @@ const Dashboard = () => {
                 <div key={task.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
                   <div>
                     <p className="text-sm font-medium">{task.title}</p>
-                    <p className="text-xs text-muted-foreground">{task.clients?.company}</p>
+                    <p className="text-xs text-muted-foreground">{task.clients?.company || "—"}</p>
                   </div>
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                     task.priority === "alta" || task.priority === "urgente" ? "bg-destructive/10 text-destructive" :
@@ -151,7 +178,7 @@ const Dashboard = () => {
         <div className="stat-card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold">Entregas Recentes</h3>
-            <span className="text-xs text-muted-foreground">{weeklyDeliveries} entregas</span>
+            <span className="text-xs text-muted-foreground">{weeklyDeliveries} esta semana</span>
           </div>
           <div className="space-y-3">
             {recentDeliveries.length === 0 ? (
@@ -163,7 +190,7 @@ const Dashboard = () => {
                     <div className={`w-2 h-2 rounded-full ${d.status === "entregue" || d.status === "confirmado" ? "bg-success" : "bg-warning"}`} />
                     <div>
                       <p className="text-sm font-medium">{d.delivery_type}</p>
-                      <p className="text-xs text-muted-foreground">{d.clients?.company}</p>
+                      <p className="text-xs text-muted-foreground">{d.clients?.company || "—"}</p>
                     </div>
                   </div>
                   <span className="text-xs text-muted-foreground">{d.expected_date || "—"}</span>

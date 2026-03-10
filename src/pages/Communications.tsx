@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { MessageSquare, Send, Search } from "lucide-react";
+import { MessageSquare, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSupabaseQuery, useSupabaseInsert } from "@/hooks/useSupabaseQuery";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -16,12 +14,14 @@ const Communications = () => {
   const { data: messages = [], isLoading } = useSupabaseQuery("communications", {
     select: "*, clients(company)",
     orderBy: { column: "created_at", ascending: false },
-    ...(selectedClient ? { filter: { column: "client_id", value: selectedClient } } : {}),
+    filter: selectedClient ? { column: "client_id", value: selectedClient } : undefined,
+    enabled: !!selectedClient,
   });
   const sendMessage = useSupabaseInsert("communications");
 
   const handleSend = () => {
     if (!message.trim() || !selectedClient) return;
+    if (message.trim().length > 2000) return;
     sendMessage.mutate({
       client_id: selectedClient,
       sender_id: user!.id,
@@ -87,9 +87,10 @@ const Communications = () => {
                   onChange={e => setMessage(e.target.value)}
                   placeholder="Digite sua mensagem..."
                   className="flex-1 min-h-[60px]"
+                  maxLength={2000}
                   onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                 />
-                <Button onClick={handleSend} className="gradient-primary text-primary-foreground self-end" disabled={sendMessage.isPending}>
+                <Button onClick={handleSend} className="gradient-primary text-primary-foreground self-end" disabled={sendMessage.isPending || !message.trim()}>
                   <Send size={16} />
                 </Button>
               </div>

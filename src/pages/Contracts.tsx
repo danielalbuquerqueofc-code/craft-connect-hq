@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, FileText, AlertCircle, Edit, Trash2 } from "lucide-react";
+import { Plus, FileText, AlertCircle, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSupabaseQuery, useSupabaseInsert, useSupabaseUpdate, useSupabaseDelete } from "@/hooks/useSupabaseQuery";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 
 const statusStyle: Record<string, { label: string; className: string }> = {
   ativo: { label: "Ativo", className: "bg-success/10 text-success border-success/20" },
@@ -37,7 +38,10 @@ const Contracts = () => {
 
   const handleSave = () => {
     if (!form.client_id || !form.service_type || !form.start_date) return;
-    const values = { ...form, monthly_value: Number(form.monthly_value), total_value: Number(form.total_value) };
+    const mv = Number(form.monthly_value);
+    const tv = Number(form.total_value);
+    if (mv < 0 || tv < 0) return;
+    const values = { ...form, monthly_value: mv, total_value: tv };
     if (editingId) {
       updateContract.mutate({ id: editingId, values }, { onSuccess: () => { setOpen(false); resetForm(); } });
     } else {
@@ -84,15 +88,15 @@ const Contracts = () => {
               </div>
               <div className="space-y-2">
                 <Label>Tipo de Serviço *</Label>
-                <Input value={form.service_type} onChange={e => setForm(f => ({ ...f, service_type: e.target.value }))} placeholder="Ex: Consultoria Web" />
+                <Input value={form.service_type} onChange={e => setForm(f => ({ ...f, service_type: e.target.value }))} placeholder="Ex: Consultoria Web" maxLength={200} />
               </div>
               <div className="space-y-2">
                 <Label>Valor Mensal</Label>
-                <Input type="number" value={form.monthly_value} onChange={e => setForm(f => ({ ...f, monthly_value: Number(e.target.value) }))} />
+                <Input type="number" min={0} value={form.monthly_value} onChange={e => setForm(f => ({ ...f, monthly_value: Number(e.target.value) }))} />
               </div>
               <div className="space-y-2">
                 <Label>Valor Total</Label>
-                <Input type="number" value={form.total_value} onChange={e => setForm(f => ({ ...f, total_value: Number(e.target.value) }))} />
+                <Input type="number" min={0} value={form.total_value} onChange={e => setForm(f => ({ ...f, total_value: Number(e.target.value) }))} />
               </div>
               <div className="space-y-2">
                 <Label>Data Início *</Label>
@@ -128,7 +132,7 @@ const Contracts = () => {
               </div>
               <div className="space-y-2 col-span-2">
                 <Label>Descrição</Label>
-                <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+                <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} maxLength={1000} />
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-4">
@@ -144,7 +148,7 @@ const Contracts = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="stat-card"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground uppercase">Contratos Ativos</p><p className="text-xl font-bold mt-1">{activeCount}</p></div><div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center"><FileText size={20} className="text-primary-foreground" /></div></div></div>
         <div className="stat-card"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground uppercase">Renovação</p><p className="text-xl font-bold mt-1">{renewalCount}</p></div><div className="w-10 h-10 rounded-lg gradient-warning flex items-center justify-center"><AlertCircle size={20} className="text-primary-foreground" /></div></div></div>
-        <div className="stat-card"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground uppercase">Receita Mensal</p><p className="text-xl font-bold mt-1">R$ {totalRevenue.toLocaleString("pt-BR")}</p></div><div className="w-10 h-10 rounded-lg gradient-success flex items-center justify-center"><FileText size={20} className="text-primary-foreground" /></div></div></div>
+        <div className="stat-card"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground uppercase">Receita Mensal</p><p className="text-xl font-bold mt-1">R$ {totalRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p></div><div className="w-10 h-10 rounded-lg gradient-success flex items-center justify-center"><FileText size={20} className="text-primary-foreground" /></div></div></div>
       </div>
 
       {isLoading ? (
@@ -169,13 +173,13 @@ const Contracts = () => {
                 <tr key={c.id} className="border-b last:border-0 hover:bg-secondary/30 transition-colors">
                   <td className="p-3 text-sm font-medium">{c.clients?.company || "—"}</td>
                   <td className="p-3 text-sm text-muted-foreground">{c.service_type}</td>
-                  <td className="p-3 text-sm font-semibold">R$ {(c.monthly_value || 0).toLocaleString("pt-BR")}</td>
+                  <td className="p-3 text-sm font-semibold">R$ {(c.monthly_value || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
                   <td className="p-3 text-sm text-muted-foreground">{c.periodicity}</td>
                   <td className="p-3"><Badge variant="outline" className={statusStyle[c.status]?.className}>{statusStyle[c.status]?.label || c.status}</Badge></td>
                   <td className="p-3">
                     <div className="flex gap-1">
                       <button onClick={() => handleEdit(c)} className="p-1.5 rounded hover:bg-secondary"><Edit size={14} className="text-muted-foreground" /></button>
-                      <button onClick={() => deleteContract.mutate(c.id)} className="p-1.5 rounded hover:bg-destructive/10"><Trash2 size={14} className="text-destructive" /></button>
+                      <DeleteConfirmDialog onConfirm={() => deleteContract.mutate(c.id)} />
                     </div>
                   </td>
                 </tr>

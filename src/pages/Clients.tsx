@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Plus, Filter, MoreHorizontal, Edit, Trash2, X } from "lucide-react";
+import { Search, Plus, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useSupabaseQuery, useSupabaseInsert, useSupabaseUpdate, useSupabaseDelete } from "@/hooks/useSupabaseQuery";
 import { useAuth } from "@/contexts/AuthContext";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 
 const statusMap: Record<string, { label: string; className: string }> = {
   ativo: { label: "Ativo", className: "bg-success/10 text-success border-success/20" },
@@ -27,6 +28,7 @@ const Clients = () => {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { data: clients = [], isLoading } = useSupabaseQuery("clients", { orderBy: { column: "created_at", ascending: false } });
   const insertClient = useSupabaseInsert("clients");
@@ -38,12 +40,34 @@ const Clients = () => {
     c.contact_name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const validate = () => {
+    const errs: Record<string, string> = {};
+    if (!form.company.trim()) errs.company = "Empresa é obrigatória";
+    if (form.company.length > 200) errs.company = "Máximo 200 caracteres";
+    if (!form.contact_name.trim()) errs.contact_name = "Contato é obrigatório";
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = "Email inválido";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleSave = () => {
-    if (!form.company || !form.contact_name) return;
+    if (!validate()) return;
+    const values = {
+      company: form.company.trim(),
+      contact_name: form.contact_name.trim(),
+      cpf_cnpj: form.cpf_cnpj.trim() || null,
+      phone: form.phone.trim() || null,
+      whatsapp: form.whatsapp.trim() || null,
+      email: form.email.trim() || null,
+      address: form.address.trim() || null,
+      segment: form.segment.trim() || null,
+      status: form.status,
+      notes: form.notes.trim() || null,
+    };
     if (editingId) {
-      updateClient.mutate({ id: editingId, values: form }, { onSuccess: () => { setOpen(false); resetForm(); } });
+      updateClient.mutate({ id: editingId, values }, { onSuccess: () => { setOpen(false); resetForm(); } });
     } else {
-      insertClient.mutate({ ...form, user_id: user!.id }, { onSuccess: () => { setOpen(false); resetForm(); } });
+      insertClient.mutate({ ...values, user_id: user!.id } as any, { onSuccess: () => { setOpen(false); resetForm(); } });
     }
   };
 
@@ -54,10 +78,11 @@ const Clients = () => {
       phone: client.phone || "", whatsapp: client.whatsapp || "", email: client.email || "",
       address: client.address || "", segment: client.segment || "", status: client.status, notes: client.notes || "",
     });
+    setErrors({});
     setOpen(true);
   };
 
-  const resetForm = () => { setForm(emptyForm); setEditingId(null); };
+  const resetForm = () => { setForm(emptyForm); setEditingId(null); setErrors({}); };
 
   return (
     <div className="space-y-6">
@@ -79,35 +104,38 @@ const Clients = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Empresa *</Label>
-                <Input value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} placeholder="Nome da empresa" />
+                <Input value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} placeholder="Nome da empresa" maxLength={200} />
+                {errors.company && <p className="text-xs text-destructive">{errors.company}</p>}
               </div>
               <div className="space-y-2">
                 <Label>Contato *</Label>
-                <Input value={form.contact_name} onChange={e => setForm(f => ({ ...f, contact_name: e.target.value }))} placeholder="Nome do responsável" />
+                <Input value={form.contact_name} onChange={e => setForm(f => ({ ...f, contact_name: e.target.value }))} placeholder="Nome do responsável" maxLength={100} />
+                {errors.contact_name && <p className="text-xs text-destructive">{errors.contact_name}</p>}
               </div>
               <div className="space-y-2">
                 <Label>CPF/CNPJ</Label>
-                <Input value={form.cpf_cnpj} onChange={e => setForm(f => ({ ...f, cpf_cnpj: e.target.value }))} placeholder="CPF ou CNPJ" />
+                <Input value={form.cpf_cnpj} onChange={e => setForm(f => ({ ...f, cpf_cnpj: e.target.value }))} placeholder="CPF ou CNPJ" maxLength={18} />
               </div>
               <div className="space-y-2">
                 <Label>Email</Label>
-                <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="email@empresa.com" />
+                <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="email@empresa.com" maxLength={255} />
+                {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
               </div>
               <div className="space-y-2">
                 <Label>Telefone</Label>
-                <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="(00) 0000-0000" />
+                <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="(00) 0000-0000" maxLength={20} />
               </div>
               <div className="space-y-2">
                 <Label>WhatsApp</Label>
-                <Input value={form.whatsapp} onChange={e => setForm(f => ({ ...f, whatsapp: e.target.value }))} placeholder="(00) 00000-0000" />
+                <Input value={form.whatsapp} onChange={e => setForm(f => ({ ...f, whatsapp: e.target.value }))} placeholder="(00) 00000-0000" maxLength={20} />
               </div>
               <div className="space-y-2 col-span-2">
                 <Label>Endereço</Label>
-                <Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="Endereço completo" />
+                <Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="Endereço completo" maxLength={300} />
               </div>
               <div className="space-y-2">
                 <Label>Segmento</Label>
-                <Input value={form.segment} onChange={e => setForm(f => ({ ...f, segment: e.target.value }))} placeholder="Ex: Tecnologia" />
+                <Input value={form.segment} onChange={e => setForm(f => ({ ...f, segment: e.target.value }))} placeholder="Ex: Tecnologia" maxLength={100} />
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
@@ -122,7 +150,7 @@ const Clients = () => {
               </div>
               <div className="space-y-2 col-span-2">
                 <Label>Observações</Label>
-                <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Anotações sobre o cliente" />
+                <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Anotações sobre o cliente" maxLength={1000} />
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-4">
@@ -187,7 +215,7 @@ const Clients = () => {
                   <td className="p-3">
                     <div className="flex gap-1">
                       <button onClick={() => handleEdit(client)} className="p-1.5 rounded hover:bg-secondary"><Edit size={14} className="text-muted-foreground" /></button>
-                      <button onClick={() => deleteClient.mutate(client.id)} className="p-1.5 rounded hover:bg-destructive/10"><Trash2 size={14} className="text-destructive" /></button>
+                      <DeleteConfirmDialog onConfirm={() => deleteClient.mutate(client.id)} />
                     </div>
                   </td>
                 </tr>

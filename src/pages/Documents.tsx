@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, FolderOpen, File, Edit, Trash2, Download } from "lucide-react";
+import { Plus, FolderOpen, File, Edit, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useSupabaseQuery, useSupabaseInsert, useSupabaseUpdate, useSupabaseDelete } from "@/hooks/useSupabaseQuery";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 
 const typeMap: Record<string, { label: string; className: string }> = {
   contrato: { label: "Contrato", className: "bg-primary/10 text-primary" },
@@ -39,7 +40,7 @@ const Documents = () => {
   const deleteDoc = useSupabaseDelete("documents");
 
   const handleSave = async () => {
-    if (!form.title || !form.doc_type) return;
+    if (!form.title.trim() || !form.doc_type) return;
     let file_url = "";
     let file_name = "";
 
@@ -55,7 +56,10 @@ const Documents = () => {
     }
 
     const values = {
-      ...form,
+      title: form.title.trim(),
+      doc_type: form.doc_type,
+      description: form.description.trim() || null,
+      project_name: form.project_name.trim() || null,
       client_id: form.client_id || null,
       uploaded_by: user!.id,
       ...(file_url ? { file_url, file_name } : {}),
@@ -90,7 +94,7 @@ const Documents = () => {
           <DialogContent>
             <DialogHeader><DialogTitle>{editingId ? "Editar Documento" : "Novo Documento"}</DialogTitle></DialogHeader>
             <div className="space-y-4">
-              <div className="space-y-2"><Label>Título *</Label><Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Título *</Label><Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} maxLength={200} /></div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Tipo *</Label>
@@ -113,8 +117,8 @@ const Documents = () => {
                   </Select>
                 </div>
               </div>
-              <div className="space-y-2"><Label>Projeto</Label><Input value={form.project_name} onChange={e => setForm(f => ({ ...f, project_name: e.target.value }))} /></div>
-              <div className="space-y-2"><Label>Descrição</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Projeto</Label><Input value={form.project_name} onChange={e => setForm(f => ({ ...f, project_name: e.target.value }))} maxLength={200} /></div>
+              <div className="space-y-2"><Label>Descrição</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} maxLength={1000} /></div>
               <div className="space-y-2"><Label>Arquivo</Label><Input type="file" onChange={e => setFile(e.target.files?.[0] || null)} /></div>
             </div>
             <div className="flex justify-end gap-2 mt-4">
@@ -145,7 +149,7 @@ const Documents = () => {
                 </div>
                 <div className="flex gap-1">
                   <button onClick={() => handleEdit(doc)} className="p-1 rounded hover:bg-secondary"><Edit size={14} className="text-muted-foreground" /></button>
-                  <button onClick={() => deleteDoc.mutate(doc.id)} className="p-1 rounded hover:bg-destructive/10"><Trash2 size={14} className="text-destructive" /></button>
+                  <DeleteConfirmDialog onConfirm={() => deleteDoc.mutate(doc.id)} />
                 </div>
               </div>
               <h3 className="font-medium text-sm mb-1">{doc.title}</h3>

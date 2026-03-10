@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, List, Columns, Calendar, Edit, Trash2 } from "lucide-react";
+import { Plus, List, Columns, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSupabaseQuery, useSupabaseInsert, useSupabaseUpdate, useSupabaseDelete } from "@/hooks/useSupabaseQuery";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 
 const columns = [
   { id: "a_fazer", label: "A Fazer", color: "bg-muted-foreground" },
@@ -45,11 +46,12 @@ const Tasks = () => {
   const deleteTask = useSupabaseDelete("tasks");
 
   const handleSave = () => {
-    if (!form.client_id || !form.title) return;
+    if (!form.client_id || !form.title.trim()) return;
+    const values = { ...form, title: form.title.trim(), description: form.description.trim() || null, assignee_name: form.assignee_name.trim() || null, due_date: form.due_date || null };
     if (editingId) {
-      updateTask.mutate({ id: editingId, values: form }, { onSuccess: () => { setOpen(false); resetForm(); } });
+      updateTask.mutate({ id: editingId, values }, { onSuccess: () => { setOpen(false); resetForm(); } });
     } else {
-      insertTask.mutate(form as any, { onSuccess: () => { setOpen(false); resetForm(); } });
+      insertTask.mutate(values as any, { onSuccess: () => { setOpen(false); resetForm(); } });
     }
   };
 
@@ -96,16 +98,16 @@ const Tasks = () => {
                 </div>
                 <div className="space-y-2">
                   <Label>Título *</Label>
-                  <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Título da demanda" />
+                  <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Título da demanda" maxLength={200} />
                 </div>
                 <div className="space-y-2">
                   <Label>Descrição</Label>
-                  <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+                  <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} maxLength={2000} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Responsável</Label>
-                    <Input value={form.assignee_name} onChange={e => setForm(f => ({ ...f, assignee_name: e.target.value }))} placeholder="Nome" />
+                    <Input value={form.assignee_name} onChange={e => setForm(f => ({ ...f, assignee_name: e.target.value }))} placeholder="Nome" maxLength={100} />
                   </div>
                   <div className="space-y-2">
                     <Label>Prazo</Label>
@@ -163,7 +165,9 @@ const Tasks = () => {
                       <div className="flex items-center gap-1">
                         <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${priorityStyle[task.priority || "media"]}`}>{task.priority}</span>
                         <button onClick={() => handleEdit(task)} className="opacity-0 group-hover:opacity-100 p-0.5"><Edit size={12} className="text-muted-foreground" /></button>
-                        <button onClick={() => deleteTask.mutate(task.id)} className="opacity-0 group-hover:opacity-100 p-0.5"><Trash2 size={12} className="text-destructive" /></button>
+                        <span className="opacity-0 group-hover:opacity-100">
+                          <DeleteConfirmDialog onConfirm={() => deleteTask.mutate(task.id)} />
+                        </span>
                       </div>
                     </div>
                     <p className="text-sm font-medium mb-2">{task.title}</p>
@@ -208,7 +212,7 @@ const Tasks = () => {
                   <td className="p-3">
                     <div className="flex gap-1">
                       <button onClick={() => handleEdit(task)} className="p-1.5 rounded hover:bg-secondary"><Edit size={14} className="text-muted-foreground" /></button>
-                      <button onClick={() => deleteTask.mutate(task.id)} className="p-1.5 rounded hover:bg-destructive/10"><Trash2 size={14} className="text-destructive" /></button>
+                      <DeleteConfirmDialog onConfirm={() => deleteTask.mutate(task.id)} />
                     </div>
                   </td>
                 </tr>

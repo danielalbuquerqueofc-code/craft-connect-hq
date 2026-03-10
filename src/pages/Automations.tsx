@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Plus, Zap, Edit, Trash2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Plus, Zap, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSupabaseQuery, useSupabaseInsert, useSupabaseUpdate, useSupabaseDelete } from "@/hooks/useSupabaseQuery";
+import { useAuth } from "@/contexts/AuthContext";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 
 const triggerLabels: Record<string, string> = {
   renovacao_contrato: "Renovação de Contrato",
@@ -20,6 +21,7 @@ const triggerLabels: Record<string, string> = {
 const emptyForm = { name: "", description: "", trigger_type: "tarefa_atrasada", enabled: true };
 
 const Automations = () => {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -30,11 +32,18 @@ const Automations = () => {
   const deleteAuto = useSupabaseDelete("automations");
 
   const handleSave = () => {
-    if (!form.name || !form.trigger_type) return;
+    if (!form.name.trim() || !form.trigger_type) return;
+    const values = {
+      name: form.name.trim(),
+      description: form.description.trim() || null,
+      trigger_type: form.trigger_type,
+      enabled: form.enabled,
+      user_id: user!.id,
+    };
     if (editingId) {
-      updateAuto.mutate({ id: editingId, values: form }, { onSuccess: () => { setOpen(false); resetForm(); } });
+      updateAuto.mutate({ id: editingId, values }, { onSuccess: () => { setOpen(false); resetForm(); } });
     } else {
-      insertAuto.mutate(form as any, { onSuccess: () => { setOpen(false); resetForm(); } });
+      insertAuto.mutate(values as any, { onSuccess: () => { setOpen(false); resetForm(); } });
     }
   };
 
@@ -59,8 +68,8 @@ const Automations = () => {
           <DialogContent>
             <DialogHeader><DialogTitle>{editingId ? "Editar Automação" : "Nova Automação"}</DialogTitle></DialogHeader>
             <div className="space-y-4">
-              <div className="space-y-2"><Label>Nome *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ex: Alerta de tarefa atrasada" /></div>
-              <div className="space-y-2"><Label>Descrição</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Nome *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ex: Alerta de tarefa atrasada" maxLength={200} /></div>
+              <div className="space-y-2"><Label>Descrição</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} maxLength={1000} /></div>
               <div className="space-y-2">
                 <Label>Gatilho *</Label>
                 <Select value={form.trigger_type} onValueChange={v => setForm(f => ({ ...f, trigger_type: v }))}>
@@ -110,7 +119,7 @@ const Automations = () => {
               <div className="flex items-center gap-3">
                 <Switch checked={a.enabled} onCheckedChange={() => toggleEnabled(a.id, a.enabled)} />
                 <button onClick={() => handleEdit(a)} className="p-1.5 rounded hover:bg-secondary"><Edit size={14} className="text-muted-foreground" /></button>
-                <button onClick={() => deleteAuto.mutate(a.id)} className="p-1.5 rounded hover:bg-destructive/10"><Trash2 size={14} className="text-destructive" /></button>
+                <DeleteConfirmDialog onConfirm={() => deleteAuto.mutate(a.id)} />
               </div>
             </div>
           ))}
