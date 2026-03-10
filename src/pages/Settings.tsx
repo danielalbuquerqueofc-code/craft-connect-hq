@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Settings as SettingsIcon, User, Bell, Palette, LogOut } from "lucide-react";
+import { useEffect, useState } from "react";
+import { User, Bell, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,17 +21,18 @@ const Settings = () => {
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [loaded, setLoaded] = useState(false);
 
-  if (profile && !loaded) {
-    setFullName(profile.full_name || "");
-    setPhone(profile.phone || "");
-    setLoaded(true);
-  }
+  useEffect(() => {
+    if (profile) {
+      setFullName(profile.full_name || "");
+      setPhone(profile.phone || "");
+    }
+  }, [profile]);
 
   const handleSaveProfile = () => {
     if (!profile) return;
-    updateProfile.mutate({ id: profile.id, values: { full_name: fullName, phone } });
+    if (!fullName.trim()) return;
+    updateProfile.mutate({ id: profile.id, values: { full_name: fullName.trim(), phone: phone.trim() } });
   };
 
   const handleLogout = async () => {
@@ -56,11 +57,11 @@ const Settings = () => {
             </div>
             <div className="space-y-2">
               <Label>Nome Completo</Label>
-              <Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Seu nome" />
+              <Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Seu nome" maxLength={100} />
             </div>
             <div className="space-y-2">
               <Label>Telefone</Label>
-              <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="(00) 00000-0000" />
+              <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="(00) 00000-0000" maxLength={20} />
             </div>
             <Button onClick={handleSaveProfile} className="gradient-primary text-primary-foreground" disabled={updateProfile.isPending}>
               Salvar Perfil

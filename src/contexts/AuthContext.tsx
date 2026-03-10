@@ -18,22 +18,47 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+const ensureProfile = async (user: User) => {
+  const { data } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!data) {
+    await supabase.from("profiles").insert({
+      user_id: user.id,
+      full_name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Usuário",
+    });
+  }
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+
+        if (_event === "SIGNED_IN" && session?.user) {
+          setTimeout(() => ensureProfile(session.user), 0);
+        }
+      }
+    );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      if (session?.user) {
+        ensureProfile(session.user);
+      }
     });
 
     return () => subscription.unsubscribe();

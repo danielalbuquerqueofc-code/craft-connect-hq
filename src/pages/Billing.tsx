@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, CreditCard, Edit, Trash2, Send } from "lucide-react";
+import { Plus, CreditCard, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useSupabaseQuery, useSupabaseInsert, useSupabaseUpdate, useSupabaseDelete } from "@/hooks/useSupabaseQuery";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 
 const statusStyle: Record<string, { label: string; className: string }> = {
   pendente: { label: "Pendente", className: "bg-warning/10 text-warning border-warning/20" },
@@ -38,7 +39,9 @@ const Billing = () => {
 
   const handleSave = () => {
     if (!form.client_id || !form.due_date) return;
-    const values = { ...form, amount: Number(form.amount), contract_id: form.contract_id || null };
+    const amt = Number(form.amount);
+    if (amt <= 0) return;
+    const values = { ...form, amount: amt, contract_id: form.contract_id || null };
     if (editingId) {
       updateInvoice.mutate({ id: editingId, values }, { onSuccess: () => { setOpen(false); resetForm(); } });
     } else {
@@ -87,10 +90,10 @@ const Billing = () => {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2"><Label>Valor *</Label><Input type="number" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: Number(e.target.value) }))} /></div>
+                <div className="space-y-2"><Label>Valor *</Label><Input type="number" min={0.01} step={0.01} value={form.amount} onChange={e => setForm(f => ({ ...f, amount: Number(e.target.value) }))} /></div>
                 <div className="space-y-2"><Label>Vencimento *</Label><Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} /></div>
               </div>
-              <div className="space-y-2"><Label>Método de Pagamento</Label><Input value={form.payment_method} onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))} placeholder="Pix, Boleto, Cartão..." /></div>
+              <div className="space-y-2"><Label>Método de Pagamento</Label><Input value={form.payment_method} onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))} placeholder="Pix, Boleto, Cartão..." maxLength={50} /></div>
               <div className="flex items-center gap-2">
                 <Switch checked={form.recurring} onCheckedChange={v => setForm(f => ({ ...f, recurring: v }))} />
                 <Label>Cobrança Recorrente</Label>
@@ -105,9 +108,9 @@ const Billing = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="stat-card"><p className="text-xs font-medium text-muted-foreground uppercase">Pendente</p><p className="text-xl font-bold mt-1 text-warning">R$ {totalPending.toLocaleString("pt-BR")}</p></div>
-        <div className="stat-card"><p className="text-xs font-medium text-muted-foreground uppercase">Recebido</p><p className="text-xl font-bold mt-1 text-success">R$ {totalPaid.toLocaleString("pt-BR")}</p></div>
-        <div className="stat-card"><p className="text-xs font-medium text-muted-foreground uppercase">Total</p><p className="text-xl font-bold mt-1">R$ {(totalPending + totalPaid).toLocaleString("pt-BR")}</p></div>
+        <div className="stat-card"><p className="text-xs font-medium text-muted-foreground uppercase">Pendente</p><p className="text-xl font-bold mt-1 text-warning">R$ {totalPending.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p></div>
+        <div className="stat-card"><p className="text-xs font-medium text-muted-foreground uppercase">Recebido</p><p className="text-xl font-bold mt-1 text-success">R$ {totalPaid.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p></div>
+        <div className="stat-card"><p className="text-xs font-medium text-muted-foreground uppercase">Total</p><p className="text-xl font-bold mt-1">R$ {(totalPending + totalPaid).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p></div>
       </div>
 
       {isLoading ? (
@@ -133,7 +136,7 @@ const Billing = () => {
                 <tr key={inv.id} className="border-b last:border-0 hover:bg-secondary/30 transition-colors">
                   <td className="p-3 text-sm font-medium">{inv.clients?.company}</td>
                   <td className="p-3 text-sm text-muted-foreground">{inv.contracts?.service_type || "—"}</td>
-                  <td className="p-3 text-sm font-semibold">R$ {inv.amount.toLocaleString("pt-BR")}</td>
+                  <td className="p-3 text-sm font-semibold">R$ {inv.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
                   <td className="p-3 text-sm text-muted-foreground">{inv.due_date}</td>
                   <td className="p-3 text-sm">{inv.recurring ? "Sim" : "Não"}</td>
                   <td className="p-3"><Badge variant="outline" className={statusStyle[inv.status]?.className}>{statusStyle[inv.status]?.label}</Badge></td>
@@ -141,7 +144,7 @@ const Billing = () => {
                     <div className="flex gap-1">
                       {inv.status === "pendente" && <button onClick={() => markPaid(inv.id)} className="p-1.5 rounded hover:bg-success/10" title="Marcar pago"><CreditCard size={14} className="text-success" /></button>}
                       <button onClick={() => handleEdit(inv)} className="p-1.5 rounded hover:bg-secondary"><Edit size={14} className="text-muted-foreground" /></button>
-                      <button onClick={() => deleteInvoice.mutate(inv.id)} className="p-1.5 rounded hover:bg-destructive/10"><Trash2 size={14} className="text-destructive" /></button>
+                      <DeleteConfirmDialog onConfirm={() => deleteInvoice.mutate(inv.id)} />
                     </div>
                   </td>
                 </tr>
