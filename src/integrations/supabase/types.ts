@@ -25,6 +25,7 @@ export type Database = {
           name: string
           trigger_type: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           config?: Json | null
@@ -36,6 +37,7 @@ export type Database = {
           name: string
           trigger_type: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           config?: Json | null
@@ -47,6 +49,7 @@ export type Database = {
           name?: string
           trigger_type?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -482,6 +485,7 @@ export type Database = {
           supplier: string | null
           type: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           amount: number
@@ -497,6 +501,7 @@ export type Database = {
           supplier?: string | null
           type: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           amount?: number
@@ -512,6 +517,7 @@ export type Database = {
           supplier?: string | null
           type?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -553,6 +559,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      owns_client: { Args: { _client_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "gestor" | "colaborador"
