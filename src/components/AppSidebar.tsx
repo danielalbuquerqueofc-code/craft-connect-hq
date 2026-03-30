@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { ThemeToggle } from "./ThemeToggle";
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/" },
@@ -81,15 +82,18 @@ const AppSidebar = () => {
                 </span>
               </div>
               <div>
-                <p className="text-xs font-medium text-sidebar-accent-foreground truncate max-w-[120px]">
+                <p className="text-xs font-medium text-sidebar-accent-foreground truncate max-w-[100px]">
                   {user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Usuário"}
                 </p>
-                <p className="text-[10px] text-sidebar-foreground truncate max-w-[120px]">{user?.email}</p>
+                <p className="text-[10px] text-sidebar-foreground truncate max-w-[100px]">{user?.email}</p>
               </div>
             </div>
-            <button onClick={signOut} className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground" title="Sair">
-              <LogOut size={14} />
-            </button>
+            <div className="flex items-center gap-1">
+              <ThemeToggle />
+              <button onClick={signOut} className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground" title="Sair">
+                <LogOut size={14} />
+              </button>
+            </div>
           </div>
         </div>
       )}
