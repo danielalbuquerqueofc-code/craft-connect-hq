@@ -65,6 +65,7 @@ export type Database = {
           id: string
           notes: string | null
           phone: string | null
+          pipeline_stage: string
           segment: string | null
           status: string
           updated_at: string
@@ -82,6 +83,7 @@ export type Database = {
           id?: string
           notes?: string | null
           phone?: string | null
+          pipeline_stage?: string
           segment?: string | null
           status?: string
           updated_at?: string
@@ -99,6 +101,7 @@ export type Database = {
           id?: string
           notes?: string | null
           phone?: string | null
+          pipeline_stage?: string
           segment?: string | null
           status?: string
           updated_at?: string
