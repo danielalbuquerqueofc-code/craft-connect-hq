@@ -49,7 +49,6 @@
     --sidebar-fg: 220 14% 80%;
     --sidebar-active: 234 89% 64%;
     --sidebar-hover: 228 20% 20%;
-    --sidebar-border: 228 20% 22%;
 
     --sidebar-background: 228 24% 14%;
     --sidebar-foreground: 220 14% 80%;
@@ -64,6 +63,59 @@
     --gradient-success: linear-gradient(135deg, hsl(142 76% 36%), hsl(160 84% 39%));
     --gradient-warning: linear-gradient(135deg, hsl(38 92% 50%), hsl(25 95% 53%));
     --gradient-danger: linear-gradient(135deg, hsl(0 84% 60%), hsl(350 89% 60%));
+  }
+
+  .dark {
+    --background: 224 30% 8%;
+    --foreground: 210 20% 92%;
+
+    --card: 224 28% 12%;
+    --card-foreground: 210 20% 92%;
+
+    --popover: 224 28% 12%;
+    --popover-foreground: 210 20% 92%;
+
+    --primary: 234 89% 64%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 224 24% 16%;
+    --secondary-foreground: 210 20% 88%;
+
+    --muted: 224 24% 16%;
+    --muted-foreground: 220 9% 55%;
+
+    --accent: 224 24% 18%;
+    --accent-foreground: 210 20% 92%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 70% 40%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 88% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --info: 199 80% 48%;
+    --info-foreground: 0 0% 100%;
+
+    --border: 224 20% 20%;
+    --input: 224 20% 20%;
+    --ring: 234 89% 64%;
+
+    --sidebar-background: 224 32% 6%;
+    --sidebar-foreground: 220 14% 65%;
+    --sidebar-primary: 234 89% 64%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 224 28% 14%;
+    --sidebar-accent-foreground: 220 14% 90%;
+    --sidebar-border: 224 24% 14%;
+    --sidebar-ring: 234 89% 64%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(234 89% 58%), hsl(262 83% 52%));
+    --gradient-success: linear-gradient(135deg, hsl(142 70% 34%), hsl(160 78% 35%));
+    --gradient-warning: linear-gradient(135deg, hsl(38 88% 46%), hsl(25 90% 48%));
+    --gradient-danger: linear-gradient(135deg, hsl(0 72% 54%), hsl(350 80% 54%));
   }
 }
 
@@ -92,7 +144,7 @@
     background: var(--gradient-danger);
   }
   .sidebar-gradient {
-    background: linear-gradient(180deg, hsl(228 24% 14%) 0%, hsl(228 28% 10%) 100%);
+    background: linear-gradient(180deg, hsl(var(--sidebar-background)) 0%, hsl(var(--sidebar-background) / 0.95) 100%);
   }
   .stat-card {
     @apply rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:shadow-md;

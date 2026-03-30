@@ -78,7 +78,7 @@ export function useSupabaseDelete<T extends TableName>(table: T) {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from(table).delete().eq("id", id as any);
+      const { error } = await (supabase.from(table).delete() as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
